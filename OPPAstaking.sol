@@ -18,21 +18,33 @@ interface IBEP20 {
 }
 
 contract OPPA_staking {
-
     address private _deployer;
-
-    address _staking_token = 0x431AcF08757484eE54051978143b0a61268e1c7f;
-
+    address _staking_token = 0x431AcF08757484eE54051978143b0a61268e1c7f; // TODO: repalce this with the correct OPPA address
+    uint256 private _minimum_balance = 1; 
+    uint256 private _staking_tax_in_percentage = 0;
+    uint256 private _untaking_tax_in_percentage = 0;
 
     constructor() {
         _deployer = msg.sender;
+    }
+
+    // Modifiiers
+    modifier isDeployer() {
+        require(_deployer == msg.sender, "This function is restricted to the deployer");
+        _; 
+    }
+
+    modifier hasEnoughTokens() {
+        uint256 balance = getTokenBalance();
+        require(balance >= _minimum_balance, "The wallet does not have enough balance");
+        _;
     }
 
     function getDeployer() public view returns(address) {
         return _deployer;
     }
 
-    function getTokenBalance() public view returns(uint256) {
+    function getTokenBalance() private view returns(uint256) {
         return IBEP20(_staking_token).balanceOf(msg.sender);
     }
 }
