@@ -28,11 +28,16 @@ contract OPPA_staking {
         _deployer = msg.sender;
     }
 
-    // Modifiiers
+    // // Modifiiers
     modifier isDeployer() {
         require(_deployer == msg.sender, "This function is restricted to the deployer");
         _; 
     }
+
+    // Events
+    event Deposit(
+        uint256 _amount
+    );
 
     modifier hasEnoughTokens() {
         uint256 balance = getTokenBalance();
@@ -44,7 +49,16 @@ contract OPPA_staking {
         return _deployer;
     }
 
+    function getStakingBalance() public view returns(uint256) {
+        return address(this).balance;
+    }
+
     function getTokenBalance() private view returns(uint256) {
         return IBEP20(_staking_token).balanceOf(msg.sender);
     }
+
+    receive() external payable {
+        emit Deposit(msg.value);
+    }
+
 }
