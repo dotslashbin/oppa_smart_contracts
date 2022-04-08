@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.4;
 
 interface IBEP20 {
@@ -23,6 +22,7 @@ contract OPPA_staking {
     uint256 private _minimum_balance = 1; 
     uint256 private _staking_tax_in_percentage = 0;
     uint256 private _untaking_tax_in_percentage = 0;
+    uint256 private _percentage_of_rewards = 10; // TODO: change to the correctavlue
 
     constructor() {
         _deployer = msg.sender;
@@ -45,15 +45,20 @@ contract OPPA_staking {
         _;
     }
 
-    function getDeployer() public view returns(address) {
+    modifier isAuthorized() {
+        require(msg.sender == _deployer, "You do not have the privilege to make this call.");
+        _;
+    }
+
+    function GetDeployer() public view returns(address) {
         return _deployer;
     }
 
-    function getStakingBalance() public view returns(uint256) {
-        return address(this).balance;
+    function GetAvailableStakingBalance() isAuthorized public view returns(uint256) {
+        return IBEP20(_staking_token).balanceOf(address(this));
     }
 
-    function getTokenBalance() private view returns(uint256) {
+    function getTokenBalance() isAuthorized private view returns(uint256) {
         return IBEP20(_staking_token).balanceOf(msg.sender);
     }
 
