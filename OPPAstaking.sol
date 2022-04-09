@@ -16,7 +16,9 @@ interface IBEP20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-contract OPPA_staking {
+ import "./Something.sol";
+
+contract OPPA_staking is Something {
     address private _deployer;
     address _staking_token = 0x431AcF08757484eE54051978143b0a61268e1c7f; // TODO: repalce this with the correct OPPA address
     uint256 private _minimum_balance = 1; 
@@ -62,8 +64,11 @@ contract OPPA_staking {
         return IBEP20(_staking_token).balanceOf(msg.sender);
     }
 
+    function SaySomethingElse() public pure returns(string memory) {
+        return string(abi.encodePacked(SaySomething(), "oieuoiur")); 
+    }
+
     receive() external payable {
         emit Deposit(msg.value);
     }
-
 }
