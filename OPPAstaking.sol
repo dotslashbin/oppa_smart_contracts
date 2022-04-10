@@ -36,11 +36,6 @@ contract OPPA_staking is Something {
         _; 
     }
 
-    // Events
-    event Deposit(
-        uint256 _amount
-    );
-
     modifier hasEnoughTokens() {
         uint256 balance = getTokenBalance();
         require(balance >= _minimum_balance, "The wallet does not have enough balance");
@@ -68,7 +63,4 @@ contract OPPA_staking is Something {
         return string(abi.encodePacked(SaySomething(), "oieuoiur")); 
     }
 
-    receive() external payable {
-        emit Deposit(msg.value);
-    }
 }
