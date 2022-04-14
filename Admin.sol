@@ -10,16 +10,20 @@ contract Admin {
     bool public _isActive; 
     uint internal _percentageOfRewards;
     uint internal _rewardsFrequencyInMinutes;
-    Authorizer contractAuthorizer; 
+    Authorizer _contractAuthorizer; 
 
     constructor() {
-        contractAuthorizer = new Authorizer(msg.sender);
+        _contractAuthorizer = new Authorizer(msg.sender);
     }
 
     // Modifiers
     modifier isAuthorized() {
-        require(contractAuthorizer.getDeployer() == msg.sender, "You do not have the authority for that."); 
+        require(_contractAuthorizer.getDeployer() == msg.sender, "You do not have the authority for that."); 
         _;
+    }
+
+    function GetAdminAddress() isAuthorized public view returns(address) {
+        return _contractAuthorizer.getDeployer();
     }
 
     /**

@@ -14,7 +14,7 @@ contract Authorizer {
         _; 
     }
 
-    function getDeployer() isDeployer public view returns(address) {
+    function getDeployer() public view returns(address) {
         return _deployer;
     }
 
