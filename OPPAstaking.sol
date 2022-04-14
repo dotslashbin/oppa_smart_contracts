@@ -5,8 +5,6 @@ import "./Authorizer.sol";
 import "./Validator.sol";
 import "./Admin.sol";
 
-
-
 contract OPPA_staking is Admin {
     uint256 private _staking_tax_in_percentage = 0;
     uint256 private _untaking_tax_in_percentage = 0;
