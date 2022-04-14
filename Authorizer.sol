@@ -2,7 +2,11 @@
 pragma solidity 0.8.9;
 
 contract Authorizer {
-    address private _deployer;
+    address internal _deployer;
+
+    constructor(address owner) {
+        _deployer = owner;
+    }
 
     // Modifiiers
     modifier isDeployer() {
@@ -10,11 +14,8 @@ contract Authorizer {
         _; 
     }
 
-    function getDeployer() isDeployer internal view returns(address) {
+    function getDeployer() public view returns(address) {
         return _deployer;
     }
 
-    function SetDeployer(address _input) internal {
-        _deployer = _input;
-    }
 }
