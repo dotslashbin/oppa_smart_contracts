@@ -62,7 +62,7 @@ contract Admin {
     /**
      * Sets to start / unpause the staking
      */ 
-    function UnPause() isAuthorized internal {
+    function UnPause() isAuthorized public {
         _isActive = true; 
     }
 
