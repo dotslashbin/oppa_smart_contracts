@@ -11,6 +11,7 @@ contract Admin {
     uint internal _percentageOfRewards;
     uint internal _rewardsFrequencyInMinutes;
     Authorizer _contractAuthorizer; 
+    address private _staking_token; // TODO: repalce this with the correct OPPA address
 
     constructor() {
         _contractAuthorizer = new Authorizer(msg.sender);
@@ -30,8 +31,11 @@ contract Admin {
      * Returns the available tokens for staking rewards in the contract
      */ 
     function GetAvailableStakingBalance() isAuthorized public view returns(uint256) {
-        // return IBEP20(_staking_token).balanceOf(address(this));
-        return 102323;
+        return IBEP20(_staking_token).balanceOf(address(this));
+    }
+
+    function GetStakingTokenAddress() public view returns(address) {
+        return _staking_token;
     }
 
     function IsStakingActive() internal view returns(bool) {
@@ -57,6 +61,10 @@ contract Admin {
      */ 
     function SetRewardsPercentage(uint _value) isAuthorized public {
         _percentageOfRewards = _value; 
+    }
+
+    function SetStakingTokenAddress(address input) isAuthorized public {
+        _staking_token = input;
     }
 
     /**
