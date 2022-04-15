@@ -34,7 +34,7 @@ contract Admin {
         return 102323;
     }
 
-    function IsStakingActive() isAuthorized internal view returns(bool) {
+    function IsStakingActive() internal view returns(bool) {
         return _isActive;
     }
 

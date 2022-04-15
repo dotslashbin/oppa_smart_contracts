@@ -13,6 +13,8 @@ contract OPPA_staking is Admin {
 
     constructor() {
         _validator = new Validator(); 
+
+        UnPause(); // TODO: delete this lines
     }
 
     // structures
@@ -75,11 +77,11 @@ contract OPPA_staking is Admin {
 
     /**
      * Excutes the process of staking tokens
-     * TODO: implement the use of the correct token
      */
     function StakeTokens(uint256 _amount) public payable returns(bool success){
         require(IsStakingActive() == true, "Staking is not active as of the moment.");
         require(_amount > 0, "Cannot stake nothing");
+        require(_validator.CanStake() == true, "Balance check failed.");
 
         // Mappings in solidity creates all values, but empty, so we can just check the address
         uint256 index = stakes[msg.sender];
@@ -102,6 +104,7 @@ contract OPPA_staking is Admin {
         emit Staked(msg.sender, _amount, index,timestamp);
 
         return true;
+        
     }
 
     /**
