@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.9;
 
-import "./Authorizer.sol";
-import "./Validator.sol";
 import "./Admin.sol";
+import "./Authorizer.sol";
+import "./Interfaces.sol"; 
+import "./Validator.sol";
 
 contract OPPA_staking is Admin {
     uint256 private _staking_tax_in_percentage = 0;
@@ -11,10 +12,9 @@ contract OPPA_staking is Admin {
     uint256 private _percentage_of_rewards = 10; 
     Validator _validator; 
 
-    constructor() {
+    constructor(address token) {
         _validator = new Validator(); 
-
-        UnPause(); // TODO: delete this lines
+        SetStakingTokenAddress(token);
     }
 
     // structures
@@ -53,6 +53,14 @@ contract OPPA_staking is Admin {
     }
 
     /**
+     * Returns the stakeholder array
+     * TODO: this is a temporary function
+     */
+    function GetAllStakeholders() isAuthorized public view returns(Stakeholder[] memory) {
+        return _stakeholders;
+    }
+
+    /**
      * Returns the number of staholders in the contract
      */
     function GetStakeHolderCount() isAuthorized public view returns(uint) {
@@ -68,20 +76,12 @@ contract OPPA_staking is Admin {
     }
 
     /**
-     * Returns the stakeholder array
-     * TODO: this is a temporary function
-     */
-    function GetStakeholders() isAuthorized public view returns(Stakeholder[] memory) {
-        return _stakeholders;
-    }
-
-    /**
      * Excutes the process of staking tokens
      */
-    function StakeTokens(uint256 _amount) public payable returns(bool success){
+    function StakeTokens(uint256 _amount) public returns(bool success) { // TODO: change it back to boolean
         require(IsStakingActive() == true, "Staking is not active as of the moment.");
         require(_amount > 0, "Cannot stake nothing");
-        require(_validator.CanStake() == true, "Balance check failed.");
+        require(_validator.CanStake(msg.sender, GetStakingTokenAddress()) == true, "Balance check failed.");
 
         // Mappings in solidity creates all values, but empty, so we can just check the address
         uint256 index = stakes[msg.sender];
