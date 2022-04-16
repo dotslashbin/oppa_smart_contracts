@@ -6,10 +6,11 @@ import "./Authorizer.sol";
 import "./Interfaces.sol"; 
 import "./Validator.sol";
 
+
 contract OPPA_staking is Admin {
     uint256 private _staking_tax_in_percentage = 0;
     uint256 private _untaking_tax_in_percentage = 0;
-    uint256 private _percentage_of_rewards = 10; 
+
     Validator _validator; 
 
     constructor(address token) {
@@ -27,6 +28,11 @@ contract OPPA_staking is Admin {
     struct Stakeholder {
         address user;
         Stake[] address_stakes;
+    }
+
+    struct Reward {
+        uint256 epoch_difference;
+        uint256 difference_in_minutes;
     }
 
     Stakeholder[] internal _stakeholders;
@@ -52,12 +58,30 @@ contract OPPA_staking is Admin {
         return userIndex; 
     }
 
+    function _getEpochIterations(uint256 stakingPeriod) public view returns(uint256) {
+        uint256 iterations = (stakingPeriod / 60) / _rewards_frequency_in_minutes; 
+        return iterations; 
+    }
+
     /**
      * Returns the stakeholder array
      * TODO: this is a temporary function
      */
     function GetAllStakeholders() isAuthorized public view returns(Stakeholder[] memory) {
         return _stakeholders;
+    }
+
+    // TODO: this is a testing function
+    function GetNextRewardDetails() public view returns(Reward memory) {
+        Stakeholder memory stakeholder = _stakeholders[stakes[msg.sender]]; 
+
+        uint startTime = stakeholder.address_stakes[0].since;
+        uint difference = block.timestamp - startTime;
+        uint differenceInMinutes = difference / 60;
+
+        Reward memory reward = Reward(difference, differenceInMinutes); 
+
+        return reward; 
     }
 
     /**
@@ -70,17 +94,24 @@ contract OPPA_staking is Admin {
     /**
      * Returns the current staking data of of the caller
      */
-    function GetStake() isAuthorized public view returns (Stakeholder memory) {
-        uint256 index = stakes[msg.sender]; 
-        return _stakeholders[index]; 
+    function GetStakes() public view returns (Stake[] memory) {
+        Stakeholder memory stakeholder = _stakeholders[stakes[msg.sender]]; 
+        return stakeholder.address_stakes;
+    }
+
+    function  GetValueToAdd(uint256 amount) public view returns(uint256) {
+        // Compute for percentage
+        uint256 valueToAdd = ((amount / 100) * _percentage_of_rewards);
+
+        return valueToAdd; 
     }
 
     /**
      * Excutes the process of staking tokens
      */
-    function StakeTokens(uint256 _amount) public returns(bool success) { // TODO: change it back to boolean
+    function StakeTokens(uint256 amount) public returns(bool success) { // TODO: change it back to boolean
         require(IsStakingActive() == true, "Staking is not active as of the moment.");
-        require(_amount > 0, "Cannot stake nothing");
+        require(amount > 0, "Cannot stake nothing");
         require(_validator.CanStake(msg.sender, GetStakingTokenAddress()) == true, "Balance check failed.");
 
         // Mappings in solidity creates all values, but empty, so we can just check the address
@@ -99,9 +130,9 @@ contract OPPA_staking is Admin {
 
         // Use the index to push a new Stake
         // push a newly created Stake with the current block timestamp.
-        _stakeholders[index].address_stakes.push(Stake(msg.sender, _amount, timestamp));
+        _stakeholders[index].address_stakes.push(Stake(msg.sender, amount, timestamp));
         // Emit an event that the stake has occured
-        emit Staked(msg.sender, _amount, index,timestamp);
+        emit Staked(msg.sender, amount, index,timestamp);
 
         return true;
         
@@ -115,5 +146,7 @@ contract OPPA_staking is Admin {
         uint256 index = stakes[msg.sender]; 
         return _stakeholders[index]; 
     }
+
+    
 
 }
