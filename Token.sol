@@ -353,7 +353,7 @@ contract OPPAdummy is Context, IBEP20, Ownable {
     _name = "OPPA Dummy";
     _symbol = "OPPAD";
     _decimals = 9;
-    _totalSupply = 1000000000000000;
+    _totalSupply = 100 * 10**15 * 10**_decimals;
     _balances[msg.sender] = _totalSupply;
 
     emit Transfer(address(0), msg.sender, _totalSupply);
