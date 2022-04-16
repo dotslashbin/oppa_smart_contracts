@@ -94,9 +94,11 @@ contract OPPA_staking is Admin {
     /**
      * Returns the current staking data of of the caller
      */
-    function GetStakes() public view returns (Stake[] memory) {
-        Stakeholder memory stakeholder = _stakeholders[stakes[msg.sender]]; 
-        return stakeholder.address_stakes;
+    function GetStakes() public view returns (Stake memory) {
+        uint256 user_index = stakes[msg.sender];
+        Stake memory current_stake = _stakeholders[user_index].address_stakes[0];
+
+        return current_stake; 
     }
 
     function  GetValueToAdd(uint256 amount) public view returns(uint256) {
