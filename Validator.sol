@@ -12,7 +12,7 @@ contract Validator {
     }
 
     function CanStake(address wallet, address token) public view returns(bool success) {
-        require(GetTokenBalance(wallet, token) > _minimum_balance, "There is not enough balance for to stake"); 
+        require(GetTokenBalance(wallet, token) > _minimum_balance, "There is not enough balance for you to stake"); 
         // TODO: check if the staker has current stake
         return true; 
     }
