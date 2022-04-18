@@ -20,19 +20,21 @@ contract OPPA_staking is Admin {
 
     // structures
     struct Stake {
-        address user;
+        address holder;
         uint256 amount;
         uint256 since;
     }
 
     struct Stakeholder {
-        address user;
+        address holder;
         Stake[] address_stakes;
     }
 
-    struct Reward {
+    struct StakeSummary {
         uint256 epoch_difference;
-        uint256 difference_in_minutes;
+        uint256 amount;
+        address staker;
+        uint256 totalRewards; 
     }
 
     Stakeholder[] internal _stakeholders;
@@ -50,17 +52,33 @@ contract OPPA_staking is Admin {
         // Push a empty item to the Array to make space for our new stakeholder
         _stakeholders.push();
         // Calculate the index of the last item in the array by Len-1
-        uint256 userIndex = _stakeholders.length - 1;
+        uint256 holderIndex = _stakeholders.length - 1;
         // Assign the address to the new index
-        _stakeholders[userIndex].user = staker;
+        _stakeholders[holderIndex].holder = staker;
         // Add index to the _stakeHolders
-        stakes[staker] = userIndex;
-        return userIndex; 
+        stakes[staker] = holderIndex;
+        return holderIndex; 
     }
 
     function _getEpochIterations(uint256 stakingPeriod) public view returns(uint256) {
         uint256 iterations = (stakingPeriod / 60) / _rewards_frequency_in_minutes; 
         return iterations; 
+    }
+
+    function _getProjections(uint256 stakedAmount, uint difference) private pure returns(uint256 nextReward, uint256 totalRewards, uint256 nextEpochTime) {
+        // TODO: convert difference in minutes
+
+        uint256 initialReward = 0;
+
+        for( uint i = 1; i <= (60*20); i++ ) {
+            if(initialReward == 0) {
+                initialReward = stakedAmount; // TODO change this with the proper computation
+            } 
+
+            initialReward += i; 
+        }
+
+        return (8008, initialReward, 10); 
     }
 
     /**
@@ -72,16 +90,23 @@ contract OPPA_staking is Admin {
     }
 
     // TODO: this is a testing function
-    function GetNextRewardDetails() public view returns(Reward memory) {
+    function GetStakeSummary() public view returns(StakeSummary memory) {
         Stakeholder memory stakeholder = _stakeholders[stakes[msg.sender]]; 
 
         uint startTime = stakeholder.address_stakes[0].since;
+        uint256 stakedAmount = stakeholder.address_stakes[0].amount;
         uint difference = block.timestamp - startTime;
-        uint differenceInMinutes = difference / 60;
+        
 
-        Reward memory reward = Reward(difference, differenceInMinutes); 
+        uint x;
+        uint256 totalRewards; 
+        uint z; 
 
-        return reward; 
+        (x,totalRewards,z) = _getProjections(stakedAmount, difference);
+
+        StakeSummary memory summary = StakeSummary(difference, stakeholder.address_stakes[0].amount, stakeholder.address_stakes[0].holder, totalRewards); 
+
+        return summary; 
     }
 
     /**
@@ -95,8 +120,8 @@ contract OPPA_staking is Admin {
      * Returns the current staking data of of the caller
      */
     function GetStakes() public view returns (Stake memory) {
-        uint256 user_index = stakes[msg.sender];
-        Stake memory current_stake = _stakeholders[user_index].address_stakes[0];
+        uint256 holder_index = stakes[msg.sender];
+        Stake memory current_stake = _stakeholders[holder_index].address_stakes[0];
 
         return current_stake; 
     }
@@ -149,6 +174,9 @@ contract OPPA_staking is Admin {
         return _stakeholders[index]; 
     }
 
-    
-
+    ///////////////////////////////////////////////////// temp methods
+    function CleanStakes() isAuthorized public returns(bool success) {
+        delete _stakeholders; 
+        return true; 
+    }
 }
