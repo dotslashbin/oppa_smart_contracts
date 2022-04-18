@@ -337,7 +337,7 @@ contract Ownable is Context {
   }
 }
 
-contract BEP20Token is Context, IBEP20, Ownable {
+contract OPPAdummy is Context, IBEP20, Ownable {
   using SafeMath for uint256;
 
   mapping (address => uint256) private _balances;
@@ -349,11 +349,11 @@ contract BEP20Token is Context, IBEP20, Ownable {
   string private _symbol;
   string private _name;
 
-  constructor(string memory _name, string memory _symbol, uint _decimals, uint _supply) public {
-    _name = _name;
-    _symbol = _symbol;
-    _decimals = _decimals;
-    _totalSupply = _supply;
+  constructor() public {
+    _name = "OPPA Dummy";
+    _symbol = "OPPAD";
+    _decimals = 9;
+    _totalSupply = 100 * 10**15 * 10**_decimals;
     _balances[msg.sender] = _totalSupply;
 
     emit Transfer(address(0), msg.sender, _totalSupply);
