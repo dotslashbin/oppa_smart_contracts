@@ -73,7 +73,7 @@ contract OPPA_staking is Admin {
 		uint totalMinutes = differenceInSeconds / 60; 
 		uint frequency = totalMinutes / _rewards_frequency_in_minutes; 
 
-		return (frequency, differenceInSeconds - (60* frequency)); 
+		return (frequency, differenceInSeconds - (totalMinutes*60)); 
 	}
 
 	function _getProjections(uint256 stakedAmount, uint iterations) private pure returns(uint256 nextReward, uint256 totalRewards, uint256 nextEpochTime) {
