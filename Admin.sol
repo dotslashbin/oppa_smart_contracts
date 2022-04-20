@@ -11,7 +11,7 @@ contract Admin {
 	uint internal _percentage_of_rewards;
 	uint internal _rewards_frequency_in_minutes;
 	Authorizer _contract_authorizer; 
-	address private _staking_token; // TODO: repalce this with the correct OPPA address
+	address private _staking_token; 
 
 	constructor() {
 		_contract_authorizer = new Authorizer(msg.sender);
