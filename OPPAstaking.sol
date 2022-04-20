@@ -150,6 +150,7 @@ contract OPPA_staking is Admin {
 		return current_stake; 
 	}
 
+	// TODO: iplement fetching of value to add to for rewards
 	function  GetValueToAdd(uint256 amount) public view returns(uint256) {
 		// Compute for percentage
 		uint256 valueToAdd = ((amount / 100) * _percentage_of_rewards);
