@@ -32,9 +32,8 @@ contract OPPA_staking is Admin {
 
 	struct StakeSummary {
 		uint256 epoch_difference;
-		uint256 amount;
-		address staker;
-		uint256 totalRewards; 
+		uint256 iterations; 
+		uint256 remainingSeconds;
 	}
 
 	Stakeholder[] internal _stakeholders;
@@ -65,12 +64,22 @@ contract OPPA_staking is Admin {
 		return iterations; 
 	}
 
-	function _getProjections(uint256 stakedAmount, uint difference) private pure returns(uint256 nextReward, uint256 totalRewards, uint256 nextEpochTime) {
-		// TODO: convert difference in minutes
+	/**
+	 * Returns the following values
+	 * frequency - total number of iterations to generate
+	 * remainingSeconds - remaining seconds until the next iteration is computed
+	 */
+	function _getNumberOfIterations(uint differenceInSeconds) private view returns(uint iterations, uint remainingSeconds) {
+		uint totalMinutes = differenceInSeconds / 60; 
+		uint frequency = totalMinutes / _rewards_frequency_in_minutes; 
 
+		return (frequency, differenceInSeconds - (60* frequency)); 
+	}
+
+	function _getProjections(uint256 stakedAmount, uint iterations) private pure returns(uint256 nextReward, uint256 totalRewards, uint256 nextEpochTime) {
 		uint256 initialReward = 0;
 
-		for( uint i = 1; i <= (60*20); i++ ) {
+		for( uint i = 1; i <= iterations; i++ ) {
 			if(initialReward == 0) {
 				initialReward = stakedAmount; // TODO change this with the proper computation
 			} 
@@ -89,13 +98,17 @@ contract OPPA_staking is Admin {
 		return _stakeholders;
 	}
 
-	// TODO: this is a testing function
 	function GetStakeSummary() public view returns(StakeSummary memory) {
 		Stakeholder memory stakeholder = _stakeholders[stakes[msg.sender]]; 
 
 		uint startTime = stakeholder.address_stakes[0].since;
 		uint256 stakedAmount = stakeholder.address_stakes[0].amount;
+
+		// Iterations
 		uint difference = block.timestamp - startTime;
+		uint iterations; 
+		uint remainingSeconds; 
+		(iterations, remainingSeconds) = _getNumberOfIterations(difference);
 		
 
 		uint x;
@@ -104,7 +117,18 @@ contract OPPA_staking is Admin {
 
 		(x,totalRewards,z) = _getProjections(stakedAmount, difference);
 
-		StakeSummary memory summary = StakeSummary(difference, stakeholder.address_stakes[0].amount, stakeholder.address_stakes[0].holder, totalRewards); 
+		// TODO: this was all 
+		// StakeSummary memory summary = StakeSummary(difference, 
+		// stakeholder.address_stakes[0].amount, 
+		// stakeholder.address_stakes[0].holder, 
+		// totalRewards, 
+		// iterations, 
+		// remainingSeconds); 
+
+		StakeSummary memory summary = StakeSummary(
+			difference, 
+			iterations, 
+			remainingSeconds); 
 
 		return summary; 
 	}
