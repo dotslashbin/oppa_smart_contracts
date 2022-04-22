@@ -23,6 +23,8 @@ contract OPPA_staking is AdminContext, StakerContext {
 	struct StakeSummary {
 		uint256 next_rewards_amount; 
 		uint256 total_rewards;
+		uint256 total_difference;
+		uint256 iterations;
 		uint256 remainingSeconds;	
 	}
 
@@ -47,18 +49,11 @@ contract OPPA_staking is AdminContext, StakerContext {
 	}
 
 	function _getProjections(uint256 stakedAmount, uint iterations) private view returns(uint256, uint256) {
-		uint256 totalRewards;
-		uint256 nextReward;
+		uint256 totalRewards = _getCalculatedReward(stakedAmount);
+		uint256 nextReward = 0;
 		for( uint iterator = 1; iterator <= iterations; iterator++ ) {
-			
-			if(iterator == 1) { // The initial
-				nextReward = _getCalculatedReward(stakedAmount);
-			} else {
-				nextReward = _getCalculatedReward(totalRewards);
-			}
-
-			totalRewards = totalRewards + nextReward;
-
+			nextReward = _getCalculatedReward(totalRewards);
+			totalRewards += nextReward;
 		}
 
 		return (nextReward, totalRewards); 
@@ -91,11 +86,13 @@ contract OPPA_staking is AdminContext, StakerContext {
 		uint nextReward;
 		uint256 totalRewards; 
 
-		(nextReward,totalRewards) = _getProjections(stakedAmount, difference);
+		(nextReward,totalRewards) = _getProjections(stakedAmount, iterations);
 
 		StakeSummary memory summary = StakeSummary(
 			nextReward, 
 			totalRewards,
+			difference,
+			iterations,
 			remainingSeconds); 
 
 		return summary; 
