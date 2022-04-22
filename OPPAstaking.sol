@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.9;
 
-import "./Admin.sol";
+import "./AdminContext.sol";
 import "./Authorizer.sol";
 import "./Interfaces.sol"; 
+import "./StakerContext.sol";
 import "./Validator.sol";
 
 
-contract OPPA_staking is Admin {
+contract OPPA_staking is AdminContext, StakerContext {
 	uint256 private _staking_tax_in_percentage = 0;
 	uint256 private _untaking_tax_in_percentage = 0;
 
@@ -18,45 +19,11 @@ contract OPPA_staking is Admin {
 		SetStakingTokenAddress(token);
 	}
 
-	// structures
-	struct Stake {
-		address holder;
-		uint256 amount;
-		uint256 since;
-	}
-
-	struct Stakeholder {
-		address holder;
-		Stake[] address_stakes;
-	}
-
+	
 	struct StakeSummary {
-		uint256 epoch_difference;
-		uint256 iterations; 
+		uint256 next_rewards_amount; 
+		uint256 total_rewards;
 		uint256 remainingSeconds;
-	}
-
-	Stakeholder[] internal _stakeholders;
-
-	// Mappings
-	mapping(address => uint256) internal stakes;
-
-	// Events
-	event Staked(address indexed staker, uint256 amount, uint256 index, uint256 timestamp); 
-
-	/**
-	 * adds a new staker account in the array of stakeholers. 
-	 */
-	function _addStakeHolder(address staker) private returns (uint256) {
-		// Push a empty item to the Array to make space for our new stakeholder
-		_stakeholders.push();
-		// Calculate the index of the last item in the array by Len-1
-		uint256 holderIndex = _stakeholders.length - 1;
-		// Assign the address to the new index
-		_stakeholders[holderIndex].holder = staker;
-		// Add index to the _stakeHolders
-		stakes[staker] = holderIndex;
-		return holderIndex; 
 	}
 
 	function _getEpochIterations(uint256 stakingPeriod) public view returns(uint256) {
@@ -76,18 +43,22 @@ contract OPPA_staking is Admin {
 		return (frequency, differenceInSeconds - (totalMinutes*60)); 
 	}
 
-	function _getProjections(uint256 stakedAmount, uint iterations) private pure returns(uint256 nextReward, uint256 totalRewards, uint256 nextEpochTime) {
-		uint256 initialReward = 0;
+	function _getProjections(uint256 stakedAmount, uint iterations) private view returns(uint256, uint256) {
+		uint256 totalRewards;
+		uint256 nextReward;
+		for( uint iterator = 1; iterator <= iterations; iterator++ ) {
+			
+			if(iterator == 1) { // The initial
+				nextReward = _getCalculatedReward(stakedAmount);
+			} else {
+				nextReward = _getCalculatedReward(totalRewards);
+			}
 
-		for( uint i = 1; i <= iterations; i++ ) {
-			if(initialReward == 0) {
-				initialReward = stakedAmount; // TODO change this with the proper computation
-			} 
+			totalRewards += nextReward;
 
-			initialReward += i; 
 		}
 
-		return (8008, initialReward, 10); 
+		return (nextReward, totalRewards); 
 	}
 
 	/**
@@ -96,6 +67,13 @@ contract OPPA_staking is Admin {
 	 */
 	function GetAllStakeholders() isAuthorized public view returns(Stakeholder[] memory) {
 		return _stakeholders;
+	}
+
+	function _getCalculatedReward(uint256 amount) private view returns(uint256) {
+		// Compute for percentage
+		uint256 valueToAdd = ((amount / 100) * _percentage_of_rewards);
+
+		return valueToAdd; 
 	}
 
 	function GetStakeSummary() public view returns(StakeSummary memory) {
@@ -111,11 +89,10 @@ contract OPPA_staking is Admin {
 		(iterations, remainingSeconds) = _getNumberOfIterations(difference);
 		
 
-		uint x;
+		uint nextReward;
 		uint256 totalRewards; 
-		uint z; 
 
-		(x,totalRewards,z) = _getProjections(stakedAmount, difference);
+		(nextReward,totalRewards) = _getProjections(stakedAmount, difference);
 
 		// TODO: this was all 
 		// StakeSummary memory summary = StakeSummary(difference, 
@@ -126,8 +103,8 @@ contract OPPA_staking is Admin {
 		// remainingSeconds); 
 
 		StakeSummary memory summary = StakeSummary(
-			difference, 
-			iterations, 
+			nextReward, 
+			totalRewards,
 			remainingSeconds); 
 
 		return summary; 
@@ -150,55 +127,28 @@ contract OPPA_staking is Admin {
 		return current_stake; 
 	}
 
-	// TODO: iplement fetching of value to add to for rewards
-	function  GetValueToAdd(uint256 amount) public view returns(uint256) {
-		// Compute for percentage
-		uint256 valueToAdd = ((amount / 100) * _percentage_of_rewards);
-
-		return valueToAdd; 
-	}
-
-	/**
-	 * Excutes the process of staking tokens
-	 */
-	function StakeTokens(uint256 amount) public returns(bool success) { // TODO: change it back to boolean
+	function StakeTokens(uint256 amount) public returns(bool success){
 		require(IsStakingActive() == true, "Staking is not active as of the moment.");
 		require(amount > 0, "Cannot stake nothing");
 		require(_validator.CanStake(msg.sender, GetStakingTokenAddress()) == true, "Balance check failed.");
 
-		// Mappings in solidity creates all values, but empty, so we can just check the address
-		uint256 index = stakes[msg.sender];
-		
-		// block.timestamp = timestamp of the current block in seconds since the epoch
-		uint256 timestamp = block.timestamp;
-		
-		// See if the staker already has a staked index or if its the first time
-		if(index == 0){
-			// This stakeholder stakes for the first time
-			// We need to add him to the stakeHolders and also map it into the Index of the stakes
-			// The index returned will be the index of the stakeholder in the stakeholders array
-			index = _addStakeHolder(msg.sender);
-		}
-
-		// Use the index to push a new Stake
-		// push a newly created Stake with the current block timestamp.
-		_stakeholders[index].address_stakes.push(Stake(msg.sender, amount, timestamp));
-		// Emit an event that the stake has occured
-		emit Staked(msg.sender, amount, index,timestamp);
+		_initStake(amount);
 
 		return true;
-		
 	}
 
 	/**
 	 * Executes the unstaking
 	 * TODO: implement the proper behaviour
 	 */
-	function UnstakeTokens() isAuthorized public view returns (Stakeholder memory) {
-		uint256 index = stakes[msg.sender]; 
-		return _stakeholders[index]; 
+	function UnstakeTokens() isAuthorized public view returns (bool success) {
+		// TODO: implement the real one
+		_initUnstake(msg.sender);
+
+		return true; 
 	}
 
+	// TODO: delete all these test methods below
 	///////////////////////////////////////////////////// temp methods
 	function CleanStakes() isAuthorized public returns(bool success) {
 		delete _stakeholders; 
