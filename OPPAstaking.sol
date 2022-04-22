@@ -23,8 +23,11 @@ contract OPPA_staking is AdminContext, StakerContext {
 	struct StakeSummary {
 		uint256 next_rewards_amount; 
 		uint256 total_rewards;
-		uint256 remainingSeconds;
+		uint256 remainingSeconds;	
 	}
+
+	// Events
+	event LogRewards(uint256 totalRewards);
 
 	function _getEpochIterations(uint256 stakingPeriod) public view returns(uint256) {
 		uint256 iterations = (stakingPeriod / 60) / _rewards_frequency_in_minutes; 
@@ -54,17 +57,13 @@ contract OPPA_staking is AdminContext, StakerContext {
 				nextReward = _getCalculatedReward(totalRewards);
 			}
 
-			totalRewards += nextReward;
+			totalRewards = totalRewards + nextReward;
 
 		}
 
 		return (nextReward, totalRewards); 
 	}
 
-	/**
-	 * Returns the stakeholder array
-	 * TODO: this is a temporary function
-	 */
 	function GetAllStakeholders() isAuthorized public view returns(Stakeholder[] memory) {
 		return _stakeholders;
 	}
@@ -93,14 +92,6 @@ contract OPPA_staking is AdminContext, StakerContext {
 		uint256 totalRewards; 
 
 		(nextReward,totalRewards) = _getProjections(stakedAmount, difference);
-
-		// TODO: this was all 
-		// StakeSummary memory summary = StakeSummary(difference, 
-		// stakeholder.address_stakes[0].amount, 
-		// stakeholder.address_stakes[0].holder, 
-		// totalRewards, 
-		// iterations, 
-		// remainingSeconds); 
 
 		StakeSummary memory summary = StakeSummary(
 			nextReward, 
@@ -153,5 +144,9 @@ contract OPPA_staking is AdminContext, StakerContext {
 	function CleanStakes() isAuthorized public returns(bool success) {
 		delete _stakeholders; 
 		return true; 
+	}
+
+	function GetPercentage() isAuthorized public view returns(uint) {
+		return _percentage_of_rewards; 
 	}
 }
