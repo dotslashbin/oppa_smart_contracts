@@ -5,7 +5,7 @@ import "./Authorizer.sol";
 import "./Validator.sol";
 import "./Interfaces.sol"; 
 
-contract Admin {
+contract AdminContext {
 
 	bool public _is_active; 
 	uint internal _percentage_of_rewards;
