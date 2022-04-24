@@ -16,9 +16,4 @@ contract Validator {
 		// TODO: check if the staker has current stake
 		return true; 
 	}
-
-	function CanUnstake(address wallet) public pure returns(bool success) {
-		// TODO implemet checking if there are tokens staked currently
-		return true; 
-	}
 }
