@@ -121,6 +121,9 @@ contract OPPA_staking is AdminContext, StakerContext {
 		// TODO: implement the transferring
 
 		_initUnstake(msg.sender);
+
+		// IBEP20(GetStakingTokenAddress()).approve(address(this), 10000000);
+		// IBEP20(GetStakingTokenAddress()).transferFrom(address(this), msg.sender, 10000000);
 		return true; 
 	}
 
