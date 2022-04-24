@@ -14,16 +14,17 @@ contract OPPA_staking is AdminContext, StakerContext {
 
 	Validator _validator; 
 
-	constructor(address token) {
+	constructor(address token, uint frequency, uint percentage ) {
 		_validator = new Validator(); 
 		SetStakingTokenAddress(token);
+		SetRewardsFrequency(frequency);
+		SetRewardsPercentage(percentage); 
+		UnPause(); // TODO: REMOVE this for the final
 	}
 
 	
 	struct StakeSummary {
-		uint256 next_rewards_amount; 
 		uint256 total_rewards;
-		uint256 total_difference;
 		uint256 iterations;
 		uint256 remainingSeconds;	
 	}
@@ -48,26 +49,23 @@ contract OPPA_staking is AdminContext, StakerContext {
 		return (frequency, differenceInSeconds - (totalMinutes*60)); 
 	}
 
-	function _getProjections(uint256 stakedAmount, uint iterations) private view returns(uint256, uint256) {
-		uint256 totalRewards = _getCalculatedReward(stakedAmount);
-		uint256 nextReward = 0;
-		for( uint iterator = 1; iterator <= iterations; iterator++ ) {
-			nextReward = _getCalculatedReward(totalRewards);
-			totalRewards += nextReward;
-		}
+	function _getPercentageOfPrincipal(uint principal) private view returns(uint) {
+		uint256 percentageValue = ((principal / 100) * _percentage_of_rewards);
+		return percentageValue; 
+	}
 
-		return (nextReward, totalRewards); 
+	
+	function _getProjections(uint256 principal) private view returns(uint256) {
+		uint256 projectedValue; 
+
+		// TODO: this is not the correct implementation
+		projectedValue += principal + (_getPercentageOfPrincipal(principal));
+
+		return projectedValue;
 	}
 
 	function GetAllStakeholders() isAuthorized public view returns(Stakeholder[] memory) {
 		return _stakeholders;
-	}
-
-	function _getCalculatedReward(uint256 amount) private view returns(uint256) {
-		// Compute for percentage
-		uint256 valueToAdd = ((amount / 100) * _percentage_of_rewards);
-
-		return valueToAdd; 
 	}
 
 	function GetStakeSummary() public view returns(StakeSummary memory) {
@@ -81,17 +79,11 @@ contract OPPA_staking is AdminContext, StakerContext {
 		uint iterations; 
 		uint remainingSeconds; 
 		(iterations, remainingSeconds) = _getNumberOfIterations(difference);
-		
 
-		uint nextReward;
-		uint256 totalRewards; 
-
-		(nextReward,totalRewards) = _getProjections(stakedAmount, iterations);
+		uint256 totalRewards = _getProjections(stakedAmount);
 
 		StakeSummary memory summary = StakeSummary(
-			nextReward, 
 			totalRewards,
-			difference,
 			iterations,
 			remainingSeconds); 
 
@@ -141,9 +133,5 @@ contract OPPA_staking is AdminContext, StakerContext {
 	function CleanStakes() isAuthorized public returns(bool success) {
 		delete _stakeholders; 
 		return true; 
-	}
-
-	function GetPercentage() isAuthorized public view returns(uint) {
-		return _percentage_of_rewards; 
 	}
 }
