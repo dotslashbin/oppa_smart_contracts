@@ -65,10 +65,9 @@ contract StakerContext {
 		return true;
 	}
 
-	function _initUnstake(address holder) internal view returns(Stakeholder memory) {
-
-		// TODO: implement the methods
-		uint256 index = stakes[holder]; 
-		return _stakeholders[index]; 
+	function _initUnstake(address holder) internal returns(bool success) {
+		uint256 userIndex = stakes[holder];
+		delete _stakeholders[userIndex].address_stakes[0]; 
+		return true;
 	}
 }

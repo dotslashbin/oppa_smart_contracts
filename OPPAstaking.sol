@@ -117,14 +117,10 @@ contract OPPA_staking is AdminContext, StakerContext {
 		return true;
 	}
 
-	/**
-	 * Executes the unstaking
-	 * TODO: implement the proper behaviour
-	 */
-	function UnstakeTokens() isAuthorized public view returns (bool success) {
-		// TODO: implement the real one
-		_initUnstake(msg.sender);
+	function UnstakeTokens() public returns (bool success) {
+		// TODO: implement the transferring
 
+		_initUnstake(msg.sender);
 		return true; 
 	}
 

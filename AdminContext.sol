@@ -73,15 +73,4 @@ contract AdminContext {
 	function UnPause() isAuthorized public {
 		_is_active = true; 
 	}
-
-	function WidthrawToWallet(address _wallet, uint256 _amount) isAuthorized public returns (bool success) {
-		require(_amount > 0, "Widthrawal needs a value.");
-		require(GetAvailableStakingBalance() > _amount, "This contract does not have enough balance to send");
-
-		bool result = IBEP20(GetStakingTokenAddress()).approve(address(this), _amount); 
-		require(result == true, "Approval failed"); 
-		IBEP20(GetStakingTokenAddress()).transferFrom(address(this), _wallet, _amount);
-
-		return true; 
-	}
 }
