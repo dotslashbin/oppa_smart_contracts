@@ -5,7 +5,7 @@ import "./AdminContext.sol";
 import "./Authorizer.sol";
 import "./Interfaces.sol"; 
 import "./StakerContext.sol";
-import "./Validator.sol";
+import "./Validator.sol";	
 
 
 contract OPPA_staking is AdminContext, StakerContext {
@@ -25,7 +25,7 @@ contract OPPA_staking is AdminContext, StakerContext {
 	
 	struct StakeSummary {
 		uint256 total_rewards;
-		uint256 iterations;
+		uint256 next_reward_amount;
 		uint256 remainingSeconds;	
 	}
 
@@ -49,19 +49,13 @@ contract OPPA_staking is AdminContext, StakerContext {
 		return (frequency, differenceInSeconds - (totalMinutes*60)); 
 	}
 
-	function _getPercentageOfPrincipal(uint principal) private view returns(uint) {
-		uint256 percentageValue = ((principal / 100) * _percentage_of_rewards);
+	function _getPercentageFromPrincipal(uint principal) private view returns(uint256) {
+		uint256 percentageValue = ((principal / 100) * _rewards_percentage_per_epoch);
 		return percentageValue; 
 	}
-
 	
-	function _getProjections(uint256 principal) private view returns(uint256) {
-		uint256 projectedValue; 
-
-		// TODO: this is not the correct implementation
-		projectedValue += principal + (_getPercentageOfPrincipal(principal));
-
-		return projectedValue;
+	function _getProjections(uint256 principal, uint since, uint frequency) private view returns(uint256) {
+		return (((block.timestamp - since) / frequency) * principal) / _rewards_percentage_per_epoch;
 	}
 
 	function GetAllStakeholders() isAuthorized public view returns(Stakeholder[] memory) {
@@ -76,15 +70,26 @@ contract OPPA_staking is AdminContext, StakerContext {
 
 		// Iterations
 		uint difference = block.timestamp - startTime;
-		uint iterations; 
+		uint frequency; 
 		uint remainingSeconds; 
-		(iterations, remainingSeconds) = _getNumberOfIterations(difference);
+		(frequency, remainingSeconds) = _getNumberOfIterations(difference);
 
-		uint256 totalRewards = _getProjections(stakedAmount);
+		uint256 totalRewards;
+		uint256 nextRewards;
+		
+		if(frequency > 0) {
+			totalRewards = _getProjections(stakedAmount, startTime, frequency);
+			nextRewards = _getPercentageFromPrincipal(stakedAmount); 
+		} else {
+			// These are the default values that should be returned when there is no iteraton ( based on frequency ) 
+			// that has happened yet
+			totalRewards = 0; 
+			nextRewards = 0; 
+		}
 
 		StakeSummary memory summary = StakeSummary(
 			totalRewards,
-			iterations,
+			nextRewards,
 			remainingSeconds); 
 
 		return summary; 
