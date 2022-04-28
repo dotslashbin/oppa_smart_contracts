@@ -8,7 +8,7 @@ import "./Interfaces.sol";
 contract AdminContext {
 
 	bool public _is_active; 
-	uint internal _percentage_of_rewards;
+	uint internal _rewards_percentage_per_epoch;
 	uint internal _rewards_frequency_in_minutes;
 	Authorizer _contract_authorizer; 
 	address private _staking_token; 
@@ -60,7 +60,7 @@ contract AdminContext {
 	 * Set the percentage of reward 
 	 */ 
 	function SetRewardsPercentage(uint _value) isAuthorized public {
-		_percentage_of_rewards = _value; 
+		_rewards_percentage_per_epoch = _value; 
 	}
 
 	function SetStakingTokenAddress(address input) isAuthorized public {
