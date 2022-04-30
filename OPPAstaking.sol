@@ -32,17 +32,12 @@ contract OPPA_staking is AdminContext, StakerContext {
 	// Events
 	event LogRewards(uint256 totalRewards);
 
-	function _getEpochIterations(uint256 stakingPeriod) public view returns(uint256) {
-		uint256 iterations = (stakingPeriod / 60) / _rewards_frequency_in_minutes; 
-		return iterations; 
-	}
-
 	/**
 	 * Returns the following values
 	 * frequency - total number of iterations to generate
 	 * remainingSeconds - remaining seconds until the next iteration is computed
 	 */
-	function _getNumberOfIterations(uint differenceInSeconds) private view returns(uint iterations, uint remainingSeconds) {
+	function _getTimeDifferences(uint differenceInSeconds) private view returns(uint iterations, uint remainingSeconds) {
 		uint totalMinutes = differenceInSeconds / 60; 
 		uint frequency = totalMinutes / _rewards_frequency_in_minutes; 
 
@@ -55,7 +50,11 @@ contract OPPA_staking is AdminContext, StakerContext {
 	}
 	
 	function _getProjections(uint256 principal, uint since, uint frequency) private view returns(uint256) {
-		return (((block.timestamp - since) / frequency) * principal) / _rewards_percentage_per_epoch;
+		uint frequencyInSeconds = frequency * 60; 
+		return (((block.timestamp - since) / frequencyInSeconds) * principal) / _rewards_percentage_per_epoch;
+		
+		// TODO: try this later
+		// uint256 result = principal*(1 + _rewards_percentage_per_epoch/frequency)**(frequency);
 	}
 
 	function GetAllStakeholders() isAuthorized public view returns(Stakeholder[] memory) {
@@ -72,7 +71,7 @@ contract OPPA_staking is AdminContext, StakerContext {
 		uint difference = block.timestamp - startTime;
 		uint frequency; 
 		uint remainingSeconds; 
-		(frequency, remainingSeconds) = _getNumberOfIterations(difference);
+		(frequency, remainingSeconds) = _getTimeDifferences(difference);
 
 		uint256 totalRewards;
 		uint256 nextRewards;
