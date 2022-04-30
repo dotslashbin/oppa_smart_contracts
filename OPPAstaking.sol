@@ -1,154 +1,135 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.9;
 
-import "./Admin.sol";
+import "./AdminContext.sol";
 import "./Authorizer.sol";
 import "./Interfaces.sol"; 
-import "./Validator.sol";
+import "./StakerContext.sol";
+import "./Validator.sol";	
 
 
-contract OPPA_staking is Admin {
-    uint256 private _staking_tax_in_percentage = 0;
-    uint256 private _untaking_tax_in_percentage = 0;
+contract OPPA_staking is AdminContext, StakerContext {
+	uint256 private _staking_tax_in_percentage = 0;
+	uint256 private _untaking_tax_in_percentage = 0;
 
-    Validator _validator; 
+	Validator _validator; 
 
-    constructor(address token) {
-        _validator = new Validator(); 
-        SetStakingTokenAddress(token);
-    }
+	constructor(address token, uint frequency, uint percentage ) {
+		_validator = new Validator(); 
+		SetStakingTokenAddress(token);
+		SetRewardsFrequency(frequency);
+		SetRewardsPercentage(percentage); 
+		UnPause(); // TODO: REMOVE this for the final
+	}
 
-    // structures
-    struct Stake {
-        address user;
-        uint256 amount;
-        uint256 since;
-    }
+	
+	struct StakeSummary {
+		uint256 total_rewards;
+		uint256 remainingSeconds;	
+	}
 
-    struct Stakeholder {
-        address user;
-        Stake[] address_stakes;
-    }
+	// Events
+	event LogRewards(uint256 totalRewards);
 
-    struct Reward {
-        uint256 epoch_difference;
-        uint256 difference_in_minutes;
-    }
+	/**
+	 * Returns the following values
+	 * frequency - total number of iterations to generate
+	 * remainingSeconds - remaining seconds until the next iteration is computed
+	 */
+	function _getTimeDifferences(uint differenceInSeconds) private view returns(uint iterations, uint remainingSeconds) {
+		uint totalMinutes = differenceInSeconds / 60; 
+		uint frequency = totalMinutes / _rewards_frequency_in_minutes; 
 
-    Stakeholder[] internal _stakeholders;
+		return (frequency, differenceInSeconds - (totalMinutes*60)); 
+	}
 
-    // Mappings
-    mapping(address => uint256) internal stakes;
+	function _getPercentageFromPrincipal(uint principal) private view returns(uint256) {
+		uint256 percentageValue = ((principal / 100) * _rewards_percentage_per_epoch);
+		return percentageValue; 
+	}
+	
+	function _getProjections(uint256 principal, uint since, uint frequency) private view returns(uint256) {
+		uint frequencyInSeconds = frequency * 60; 
+		return (((block.timestamp - since) / frequencyInSeconds) * principal) / _rewards_percentage_per_epoch;
+		
+		// TODO: try this later
+		// uint256 result = principal*(1 + _rewards_percentage_per_epoch/frequency)**(frequency);
+	}
 
-    // Events
-    event Staked(address indexed staker, uint256 amount, uint256 index, uint256 timestamp); 
+	function GetAllStakeholders() isAuthorized public view returns(Stakeholder[] memory) {
+		return _stakeholders;
+	}
 
-    /**
-     * adds a new staker account in the array of stakeholers. 
-     */
-    function _addStakeHolder(address staker) private returns (uint256) {
-        // Push a empty item to the Array to make space for our new stakeholder
-        _stakeholders.push();
-        // Calculate the index of the last item in the array by Len-1
-        uint256 userIndex = _stakeholders.length - 1;
-        // Assign the address to the new index
-        _stakeholders[userIndex].user = staker;
-        // Add index to the _stakeHolders
-        stakes[staker] = userIndex;
-        return userIndex; 
-    }
+	function GetStakeSummary() public view returns(StakeSummary memory) {
+		Stakeholder memory stakeholder = _stakeholders[stakes[msg.sender]]; 
 
-    function _getEpochIterations(uint256 stakingPeriod) public view returns(uint256) {
-        uint256 iterations = (stakingPeriod / 60) / _rewards_frequency_in_minutes; 
-        return iterations; 
-    }
+		uint startTime = stakeholder.address_stakes[0].since;
+		uint256 stakedAmount = stakeholder.address_stakes[0].amount;
 
-    /**
-     * Returns the stakeholder array
-     * TODO: this is a temporary function
-     */
-    function GetAllStakeholders() isAuthorized public view returns(Stakeholder[] memory) {
-        return _stakeholders;
-    }
+		// Iterations
+		uint difference = block.timestamp - startTime;
+		uint frequency; 
+		uint remainingSeconds; 
+		(frequency, remainingSeconds) = _getTimeDifferences(difference);
 
-    // TODO: this is a testing function
-    function GetNextRewardDetails() public view returns(Reward memory) {
-        Stakeholder memory stakeholder = _stakeholders[stakes[msg.sender]]; 
+		uint256 totalRewards;
+		
+		if(frequency > 0) {
+			totalRewards = _getProjections(stakedAmount, startTime, frequency);
+		} else {
+			// These are the default values that should be returned when there is no iteraton ( based on frequency ) 
+			// that has happened yet
+			totalRewards = 0; 
+		}
 
-        uint startTime = stakeholder.address_stakes[0].since;
-        uint difference = block.timestamp - startTime;
-        uint differenceInMinutes = difference / 60;
+		StakeSummary memory summary = StakeSummary(
+			totalRewards,
+			remainingSeconds); 
 
-        Reward memory reward = Reward(difference, differenceInMinutes); 
+		return summary; 
+	}
 
-        return reward; 
-    }
+	/**
+	 * Returns the number of staholders in the contract
+	 */
+	function GetStakeHolderCount() isAuthorized public view returns(uint) {
+		return _stakeholders.length;    
+	}
 
-    /**
-     * Returns the number of staholders in the contract
-     */
-    function GetStakeHolderCount() isAuthorized public view returns(uint) {
-        return _stakeholders.length;    
-    }
+	/**
+	 * Returns the current staking data of of the caller
+	 */
+	function GetStakes() public view returns (Stake memory) {
+		uint256 holder_index = stakes[msg.sender];
+		Stake memory current_stake = _stakeholders[holder_index].address_stakes[0];
 
-    /**
-     * Returns the current staking data of of the caller
-     */
-    function GetStakes() public view returns (Stake memory) {
-        uint256 user_index = stakes[msg.sender];
-        Stake memory current_stake = _stakeholders[user_index].address_stakes[0];
+		return current_stake; 
+	}
 
-        return current_stake; 
-    }
+	function StakeTokens(uint256 amount) public returns(bool success){
+		require(IsStakingActive() == true, "Staking is not active as of the moment.");
+		require(amount > 0, "Cannot stake nothing");
+		require(_validator.CanStake(msg.sender, GetStakingTokenAddress()) == true, "Balance check failed.");
 
-    function  GetValueToAdd(uint256 amount) public view returns(uint256) {
-        // Compute for percentage
-        uint256 valueToAdd = ((amount / 100) * _percentage_of_rewards);
+		_initStake(amount);
 
-        return valueToAdd; 
-    }
+		return true;
+	}
 
-    /**
-     * Excutes the process of staking tokens
-     */
-    function StakeTokens(uint256 amount) public returns(bool success) { // TODO: change it back to boolean
-        require(IsStakingActive() == true, "Staking is not active as of the moment.");
-        require(amount > 0, "Cannot stake nothing");
-        require(_validator.CanStake(msg.sender, GetStakingTokenAddress()) == true, "Balance check failed.");
+	function UnstakeTokens() public returns (bool success) {
+		// TODO: implement the transferring
 
-        // Mappings in solidity creates all values, but empty, so we can just check the address
-        uint256 index = stakes[msg.sender];
-        
-        // block.timestamp = timestamp of the current block in seconds since the epoch
-        uint256 timestamp = block.timestamp;
-        
-        // See if the staker already has a staked index or if its the first time
-        if(index == 0){
-            // This stakeholder stakes for the first time
-            // We need to add him to the stakeHolders and also map it into the Index of the stakes
-            // The index returned will be the index of the stakeholder in the stakeholders array
-            index = _addStakeHolder(msg.sender);
-        }
+		_initUnstake(msg.sender);
 
-        // Use the index to push a new Stake
-        // push a newly created Stake with the current block timestamp.
-        _stakeholders[index].address_stakes.push(Stake(msg.sender, amount, timestamp));
-        // Emit an event that the stake has occured
-        emit Staked(msg.sender, amount, index,timestamp);
+		// IBEP20(GetStakingTokenAddress()).approve(address(this), 10000000);
+		// IBEP20(GetStakingTokenAddress()).transferFrom(address(this), msg.sender, 10000000);
+		return true; 
+	}
 
-        return true;
-        
-    }
-
-    /**
-     * Executes the unstaking
-     * TODO: implement the proper behaviour
-     */
-    function UnstakeTokens() isAuthorized public view returns (Stakeholder memory) {
-        uint256 index = stakes[msg.sender]; 
-        return _stakeholders[index]; 
-    }
-
-    
-
+	// TODO: delete all these test methods below
+	///////////////////////////////////////////////////// temp methods
+	function CleanStakes() isAuthorized public returns(bool success) {
+		delete _stakeholders; 
+		return true; 
+	}
 }
