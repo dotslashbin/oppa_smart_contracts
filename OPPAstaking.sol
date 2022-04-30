@@ -25,7 +25,6 @@ contract OPPA_staking is AdminContext, StakerContext {
 	
 	struct StakeSummary {
 		uint256 total_rewards;
-		uint256 next_reward_amount;
 		uint256 remainingSeconds;	
 	}
 
@@ -74,21 +73,17 @@ contract OPPA_staking is AdminContext, StakerContext {
 		(frequency, remainingSeconds) = _getTimeDifferences(difference);
 
 		uint256 totalRewards;
-		uint256 nextRewards;
 		
 		if(frequency > 0) {
 			totalRewards = _getProjections(stakedAmount, startTime, frequency);
-			nextRewards = _getPercentageFromPrincipal(stakedAmount); 
 		} else {
 			// These are the default values that should be returned when there is no iteraton ( based on frequency ) 
 			// that has happened yet
 			totalRewards = 0; 
-			nextRewards = 0; 
 		}
 
 		StakeSummary memory summary = StakeSummary(
 			totalRewards,
-			nextRewards,
 			remainingSeconds); 
 
 		return summary; 
