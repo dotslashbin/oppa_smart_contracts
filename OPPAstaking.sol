@@ -5,10 +5,11 @@ import "./AdminContext.sol";
 import "./Authorizer.sol";
 import "./Interfaces.sol"; 
 import "./StakerContext.sol";
+import "./TaxerContext.sol";
 import "./Validator.sol";	
 
 
-contract OPPA_staking is AdminContext, StakerContext {
+contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 	uint256 private _staking_tax_in_percentage = 0;
 	uint256 private _untaking_tax_in_percentage = 0;
 
@@ -43,23 +44,26 @@ contract OPPA_staking is AdminContext, StakerContext {
 		return (frequency, differenceInSeconds - (totalMinutes*60)); 
 	}
 
-	function _getPercentageFromPrincipal(uint principal) private view returns(uint256) {
-		uint256 percentageValue = ((principal / 100) * _rewards_percentage_per_epoch);
-		return percentageValue; 
-	}
-	
+	/**
+	 * Simple Interest formula
+	 */
 	function _getProjections(uint256 principal, uint since, uint frequency) private view returns(uint256) {
 		uint frequencyInSeconds = frequency * 60; 
-		return (((block.timestamp - since) / frequencyInSeconds) * principal) / _rewards_percentage_per_epoch;
-		
-		// TODO: try this later
-		// uint256 result = principal*(1 + _rewards_percentage_per_epoch/frequency)**(frequency);
+		uint256 rewards = (((block.timestamp - since) / frequencyInSeconds) * principal) / _rewards_percentage_per_epoch;
+
+		return principal + rewards;
 	}
 
+	/**
+	 * Method to fetch all the stake holders in the contract
+	 */
 	function GetAllStakeholders() isAuthorized public view returns(Stakeholder[] memory) {
 		return _stakeholders;
 	}
 
+	/**
+	 * Method to generate the stake summary
+	 */
 	function GetStakeSummary() public view returns(StakeSummary memory) {
 		Stakeholder memory stakeholder = _stakeholders[stakes[msg.sender]]; 
 
@@ -106,12 +110,16 @@ contract OPPA_staking is AdminContext, StakerContext {
 		return current_stake; 
 	}
 
+	/**
+	 * Initializes the process of staking tokens
+	 */
 	function StakeTokens(uint256 amount) public returns(bool success){
 		require(IsStakingActive() == true, "Staking is not active as of the moment.");
 		require(amount > 0, "Cannot stake nothing");
 		require(_validator.CanStake(msg.sender, GetStakingTokenAddress()) == true, "Balance check failed.");
 
-		_initStake(amount);
+		uint256 valueTostake = deductTax(_tax_percentage, amount, _integer_multiplier);
+		_initStake(valueTostake);
 
 		return true;
 	}
@@ -131,5 +139,23 @@ contract OPPA_staking is AdminContext, StakerContext {
 	function CleanStakes() isAuthorized public returns(bool success) {
 		delete _stakeholders; 
 		return true; 
+	}
+
+	event Test(uint amount, uint value, address sender); 
+
+	struct TestOutput {
+		uint256 token;
+		uint256 bnb;
+		address bnbee;	
+	}
+
+	function testPay(uint256 amount) public payable returns(TestOutput memory) {
+		emit Test(amount, msg.value, msg.sender); 
+		TestOutput memory output = TestOutput(amount,msg.value,msg.sender); 
+		return output; 
+	}
+
+	function getValues() public view returns(uint, uint) {
+		return(_tax_percentage, _integer_multiplier); 
 	}
 }

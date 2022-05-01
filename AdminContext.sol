@@ -8,7 +8,9 @@ import "./Interfaces.sol";
 contract AdminContext {
 
 	bool public _is_active; 
+	uint internal _integer_multiplier;
 	uint internal _rewards_percentage_per_epoch;
+	uint internal _tax_percentage;
 	uint internal _rewards_frequency_in_minutes;
 	Authorizer _contract_authorizer; 
 	address private _staking_token; 
@@ -49,10 +51,16 @@ contract AdminContext {
 		_is_active = false;
 	}
 
+	function setIntegerMultiplier(uint _value) isAuthorized public {
+		require(_value > 0, "Integer multiplier needs to be greater than 0"); 
+		_integer_multiplier = _value; 
+	}
+
 	/**
 	 * Sets reward frequency
 	 */
 	function SetRewardsFrequency(uint _value) isAuthorized public {
+		require(_value > 0, "Rewarards frequency cannot be 0");
 		_rewards_frequency_in_minutes = _value;
 	}
 
@@ -60,11 +68,18 @@ contract AdminContext {
 	 * Set the percentage of reward 
 	 */ 
 	function SetRewardsPercentage(uint _value) isAuthorized public {
+		require(_value > 0, "Rewards percentage value cannot be 0");
 		_rewards_percentage_per_epoch = _value; 
 	}
 
 	function SetStakingTokenAddress(address input) isAuthorized public {
+		// TODO: secure the value of input
 		_staking_token = input;
+	}
+
+	function setTaxPercentage(uint _value) isAuthorized public {
+		require(_value > 0, "Tax percentage input needs to be more than 0");
+		_tax_percentage =  _value * _integer_multiplier; 
 	}
 
 	/**
