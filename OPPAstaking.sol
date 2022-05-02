@@ -23,7 +23,6 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 		SetIntegerMultiplier(integerMultipler);
 		SetStakeTaxPercentage(stakingTax);
 		SetUnstakeTaxPercentage(unstakingTax);
-		UnPause();// TODO: delete this on the final
 	}
 
 	
