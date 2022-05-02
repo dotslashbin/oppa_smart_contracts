@@ -20,7 +20,6 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 		SetStakingTokenAddress(token);
 		SetRewardsFrequency(frequency);
 		SetRewardsPercentage(percentage); 
-		UnPause(); // TODO: REMOVE this for the final
 	}
 
 	
@@ -125,33 +124,10 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 	}
 
 	function UnstakeTokens() public returns (bool success) {
-		// TODO: implement the transferring
-
 		_initUnstake(msg.sender);
 
 		// IBEP20(GetStakingTokenAddress()).approve(address(this), 10000000);
 		// IBEP20(GetStakingTokenAddress()).transferFrom(address(this), msg.sender, 10000000);
 		return true; 
-	}
-
-	// TODO: delete all these test methods below
-	///////////////////////////////////////////////////// temp methods
-	function CleanStakes() isAuthorized public returns(bool success) {
-		delete _stakeholders; 
-		return true; 
-	}
-
-	event Test(uint amount, uint value, address sender); 
-
-	struct TestOutput {
-		uint256 token;
-		uint256 bnb;
-		address bnbee;	
-	}
-
-	function testPay(uint256 amount) public payable returns(TestOutput memory) {
-		emit Test(amount, msg.value, msg.sender); 
-		TestOutput memory output = TestOutput(amount,msg.value,msg.sender); 
-		return output; 
 	}
 }
