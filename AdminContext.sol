@@ -52,7 +52,7 @@ contract AdminContext {
 		_is_active = false;
 	}
 
-	function setIntegerMultiplier(uint _value) isAuthorized public {
+	function SetIntegerMultiplier(uint _value) isAuthorized public {
 		require(_value > 0, "Integer multiplier needs to be greater than 0"); 
 		_integer_multiplier = _value; 
 	}
@@ -78,12 +78,12 @@ contract AdminContext {
 		_staking_token = input;
 	}
 
-	function setStakeTaxPercentage(uint _value) isAuthorized public {
+	function SetStakeTaxPercentage(uint _value) isAuthorized public {
 		require(_value > 0, "Tax percentage input needs to be more than 0");
 		_stake_tax_percentage =  _value; 
 	}
 
-	function setUnstakeTaxPercentage(uint _value) isAuthorized public {
+	function SetUnstakeTaxPercentage(uint _value) isAuthorized public {
 		require(_value > 0, "Tax percentage input needs to be more than 0");
 		_unstake_tax_percentage =  _value; 
 	}
