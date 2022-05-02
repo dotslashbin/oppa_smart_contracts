@@ -10,9 +10,10 @@ contract TaxerContext {
 			return amount;
 		} 
 
-		// At this point, "tax" has been multiplied by the multiplier use only integers
-		uint256 valueToDeduct = (amount / 100) * tax; 
+		uint256 denominator = 100*intMultiplier;
 
-		return amount - (valueToDeduct/intMultiplier); 
+		// At this point, "tax" has been multiplied by the multiplier use only integers
+		uint256 valueToDeduct = (amount / denominator ) * tax; 
+		return amount - valueToDeduct;
 	}
 }
