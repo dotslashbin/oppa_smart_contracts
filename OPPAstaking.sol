@@ -118,7 +118,7 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 		require(amount > 0, "Cannot stake nothing");
 		require(_validator.CanStake(msg.sender, GetStakingTokenAddress()) == true, "Balance check failed.");
 
-		uint256 valueTostake = deductTax(_tax_percentage, amount, _integer_multiplier);
+		uint256 valueTostake = deductTax(_stake_tax_percentage, amount, _integer_multiplier);
 		_initStake(valueTostake);
 
 		return true;
@@ -153,9 +153,5 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 		emit Test(amount, msg.value, msg.sender); 
 		TestOutput memory output = TestOutput(amount,msg.value,msg.sender); 
 		return output; 
-	}
-
-	function getValues() public view returns(uint, uint) {
-		return(_tax_percentage, _integer_multiplier); 
 	}
 }
