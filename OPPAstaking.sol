@@ -15,11 +15,14 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 
 	Validator _validator; 
 
-	constructor(address token, uint frequency, uint percentage ) {
+	constructor(address token, uint frequency, uint percentage, uint integerMultipler, uint stakingTax, uint unstakingTax ) {
 		_validator = new Validator(); 
 		SetStakingTokenAddress(token);
 		SetRewardsFrequency(frequency);
 		SetRewardsPercentage(percentage); 
+		SetIntegerMultiplier(integerMultipler);
+		SetStakeTaxPercentage(stakingTax);
+		SetUnstakeTaxPercentage(unstakingTax);
 		UnPause();// TODO: delete this on the final
 	}
 
