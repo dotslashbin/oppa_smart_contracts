@@ -15,11 +15,14 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 
 	Validator _validator; 
 
-	constructor(address token, uint frequency, uint percentage ) {
+	constructor(address token, uint frequency, uint percentage, uint integerMultipler, uint stakingTax, uint unstakingTax ) {
 		_validator = new Validator(); 
 		SetStakingTokenAddress(token);
 		SetRewardsFrequency(frequency);
 		SetRewardsPercentage(percentage); 
+		SetIntegerMultiplier(integerMultipler);
+		SetStakeTaxPercentage(stakingTax);
+		SetUnstakeTaxPercentage(unstakingTax);
 	}
 
 	
@@ -45,12 +48,15 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 
 	/**
 	 * Simple Interest formula
+	 * NOTE: at this point, the _rewards_percentage_per_epoch has already been multiplied with the multiplier, 
+	 * therefore, the final result should be divided wite the multiplier for the actual count.
 	 */
-	function _getProjections(uint256 principal, uint since, uint frequency) private view returns(uint256) {
+	function _getRewards(uint256 principal, uint since, uint frequency) private view returns(uint256) {
+		
 		uint frequencyInSeconds = frequency * 60; 
 		uint256 rewards = (((block.timestamp - since) / frequencyInSeconds) * principal) / _rewards_percentage_per_epoch;
 
-		return principal + rewards;
+		return rewards / _integer_multiplier;
 	}
 
 	/**
@@ -78,7 +84,7 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 		uint256 totalRewards;
 		
 		if(frequency > 0) {
-			totalRewards = _getProjections(stakedAmount, startTime, frequency);
+			totalRewards = _getRewards(stakedAmount, startTime, frequency);
 		} else {
 			// These are the default values that should be returned when there is no iteraton ( based on frequency ) 
 			// that has happened yet
@@ -124,10 +130,20 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 	}
 
 	function UnstakeTokens() public returns (bool success) {
-		_initUnstake(msg.sender);
+		require(IBEP20(GetStakingTokenAddress()).balanceOf(address(this)) > 0, "The contract does not have any balance"); 
+		// Checks to see if the holder is indeed a staker
+		Stake memory stake = GetStakes();
+		require(stake.holder != address(0), "The sender is not a valid stake holder."); 
 
-		// IBEP20(GetStakingTokenAddress()).approve(address(this), 10000000);
-		// IBEP20(GetStakingTokenAddress()).transferFrom(address(this), msg.sender, 10000000);
+		StakeSummary memory summary = GetStakeSummary();
+
+		uint256 stakePlusRewards = summary.total_rewards + stake.amount;
+		uint256 totalMinusTax = deductTax(_unstake_tax_percentage, stakePlusRewards, _integer_multiplier);
+
+		require(totalMinusTax > 0, "Rewards to send must have a value");
+		IBEP20(GetStakingTokenAddress()).transfer(msg.sender, totalMinusTax);
+
+		_initUnstake(msg.sender);
 		return true; 
 	}
 }
