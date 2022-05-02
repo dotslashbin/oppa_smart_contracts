@@ -10,7 +10,8 @@ contract AdminContext {
 	bool public _is_active; 
 	uint internal _integer_multiplier;
 	uint internal _rewards_percentage_per_epoch;
-	uint internal _tax_percentage;
+	uint internal _stake_tax_percentage;
+	uint internal _unstake_tax_percentage;
 	uint internal _rewards_frequency_in_minutes;
 	Authorizer _contract_authorizer; 
 	address private _staking_token; 
@@ -77,9 +78,14 @@ contract AdminContext {
 		_staking_token = input;
 	}
 
-	function setTaxPercentage(uint _value) isAuthorized public {
+	function setStakeTaxPercentage(uint _value) isAuthorized public {
 		require(_value > 0, "Tax percentage input needs to be more than 0");
-		_tax_percentage =  _value * _integer_multiplier; 
+		_stake_tax_percentage =  _value; 
+	}
+
+	function setUnstakeTaxPercentage(uint _value) isAuthorized public {
+		require(_value > 0, "Tax percentage input needs to be more than 0");
+		_unstake_tax_percentage =  _value; 
 	}
 
 	/**
