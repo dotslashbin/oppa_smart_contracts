@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.9;
 
@@ -37,8 +38,24 @@ contract AdminContext {
 		return IBEP20(_staking_token).balanceOf(address(this));
 	}
 
+	function GetRewardsFrequencyInMinutes() public view returns(uint) {
+		return _rewards_frequency_in_minutes;
+	}
+
+	function GetRewardsPercentagePerEpoch() public view returns(uint) {
+		return _rewards_percentage_per_epoch; 
+	}
+
 	function GetStakingTokenAddress() public view returns(address) {
 		return _staking_token;
+	}
+
+	function GetStakeTaxPercentage() public view returns(uint) {
+		return _stake_tax_percentage;
+	}
+
+	function GetUnstakeTaxPercentage() public view returns(uint) {
+		return _unstake_tax_percentage;
 	}
 
 	function IsStakingActive() internal view returns(bool) {
