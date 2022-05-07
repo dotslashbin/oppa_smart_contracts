@@ -38,6 +38,10 @@ contract AdminContext {
 		return IBEP20(_staking_token).balanceOf(address(this));
 	}
 
+	function GetIntegerMultiplier() public view returns(uint) {
+		return _integer_multiplier;
+	}
+
 	function GetRewardsFrequencyInMinutes() public view returns(uint) {
 		return _rewards_frequency_in_minutes;
 	}
