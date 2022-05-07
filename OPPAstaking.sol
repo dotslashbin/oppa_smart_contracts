@@ -114,6 +114,22 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 	}
 
 	/**
+	* this method returns the total number of staked tokens
+	 */
+	function GetTotalStaked() isAuthorized public view returns(uint256) {
+
+		uint256 totalStaked; 
+
+		for(uint i = 0; i < _stakeholders.length; i++) {
+			Stake memory hodlerStake = _stakeholders[i].address_stakes[0]; // This is 0 for now because we are using only one slot at a time
+
+			totalStaked += hodlerStake.amount; 
+		}
+
+		return totalStaked;
+	}
+
+	/**
 	 * Initializes the process of staking tokens
 	 */
 	function StakeTokens(uint256 amount) public returns(bool success){
