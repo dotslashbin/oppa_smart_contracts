@@ -28,7 +28,7 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 	
 	struct StakeSummary {
 		uint256 total_rewards;
-		uint256 remainingSeconds;	
+		uint start_time;	
 	}
 
 	// Events
@@ -37,13 +37,12 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 	/**
 	 * Returns the following values
 	 * frequency - total number of iterations to generate
-	 * remainingSeconds - remaining seconds until the next iteration is computed
 	 */
-	function _getTimeDifferences(uint differenceInSeconds) private view returns(uint iterations, uint remainingSeconds) {
+	function _getFrequency(uint differenceInSeconds) private view returns(uint) {
 		uint totalMinutes = differenceInSeconds / 60; 
 		uint frequency = totalMinutes / _rewards_frequency_in_minutes; 
 
-		return (frequency, differenceInSeconds - (totalMinutes*60)); 
+		return frequency;
 	}
 
 	/**
@@ -77,9 +76,8 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 
 		// Iterations
 		uint difference = block.timestamp - startTime;
-		uint frequency; 
-		uint remainingSeconds; 
-		(frequency, remainingSeconds) = _getTimeDifferences(difference);
+		
+		uint frequency = _getFrequency(difference);
 
 		uint256 totalRewards;
 		
@@ -93,7 +91,7 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 
 		StakeSummary memory summary = StakeSummary(
 			totalRewards,
-			remainingSeconds); 
+			startTime);
 
 		return summary; 
 	}
