@@ -67,7 +67,7 @@ contract StakerContext {
 
 	function _initUnstake(address holder) internal returns(bool success) {
 		uint256 userIndex = stakes[holder];
-		delete _stakeholders[userIndex].address_stakes[0]; 
+		delete _stakeholders[userIndex];
 		return true;
 	}
 }
