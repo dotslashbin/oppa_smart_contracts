@@ -113,9 +113,6 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 		return current_stake; 
 	}
 
-	/**
-	* this method returns the total number of staked tokens
-	 */
 	function GetTotalStaked() isAuthorized public view returns(uint256) {
 
 		uint256 totalStaked; 
