@@ -28,7 +28,6 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 	
 	struct StakeSummary {
 		uint block_time;
-		uint frequency;
 		uint256 total_rewards;
 		uint start_time;	
 		uint difference; 
@@ -53,12 +52,13 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 	 * NOTE: at this point, the _rewards_percentage_per_epoch has already been multiplied with the multiplier, 
 	 * therefore, the final result should be divided wite the multiplier for the actual count.
 	 */
-	function _getRewards(uint256 principal, uint since, uint frequency) private view returns(uint256) {
+	function _getRewards(uint256 principal, uint since) private view returns(uint256) {
 		
-		uint frequencyInSeconds = frequency * 60; 
-		uint256 rewards = (((block.timestamp - since) / frequencyInSeconds) * principal) / _rewards_percentage_per_epoch;
+		// uint frequencyInSeconds = frequency * 60; 
+		// uint256 rewards = (((block.timestamp - since) / frequencyInSeconds) * principal) / _rewards_percentage_per_epoch;
 
-		return rewards / _integer_multiplier;
+		return (((block.timestamp - since) / 2 minutes) * principal) / _rewards_percentage_per_epoch;
+		// return rewards;
 	}
 
 	/**
@@ -71,7 +71,7 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 	/**
 	 * Method to generate the stake summary
 	 */
-		function GetStakeSummary() public view returns(StakeSummary memory) {
+	function GetStakeSummary() public view returns(StakeSummary memory) {
 		Stakeholder memory stakeholder = _stakeholders[stakes[msg.sender]]; 
 
 		uint startTime = stakeholder.address_stakes[0].since;
@@ -80,10 +80,9 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 		// Iterations
 		uint difference = block.timestamp - startTime;
 		uint256 totalRewards;
-		uint frequency = _getFrequency(difference);
 		
-		if(frequency > 0) {
-			totalRewards = _getRewards(stakedAmount, startTime, frequency);
+		if((difference / 60) > 2) {
+			totalRewards = _getRewards(stakedAmount, startTime);
 		} else {
 			// These are the default values that should be returned when there is no iteraton ( based on frequency ) 
 			// that has happened yet
@@ -92,7 +91,6 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 
 		StakeSummary memory summary = StakeSummary(
 			block.timestamp,
-			frequency,
 			totalRewards,
 			startTime,
 			difference);
