@@ -53,12 +53,7 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 	 * therefore, the final result should be divided wite the multiplier for the actual count.
 	 */
 	function _getRewards(uint256 principal, uint since) private view returns(uint256) {
-		
-		// uint frequencyInSeconds = frequency * 60; 
-		// uint256 rewards = (((block.timestamp - since) / frequencyInSeconds) * principal) / _rewards_percentage_per_epoch;
-
-		return (((block.timestamp - since) / 2 minutes) * principal) / _rewards_percentage_per_epoch;
-		// return rewards;
+		return (((block.timestamp - since) / 15 minutes) * principal) / _rewards_percentage_per_epoch;
 	}
 
 	/**
