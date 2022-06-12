@@ -145,7 +145,9 @@ contract OPPA_staking is AdminContext, StakerContext, TaxerContext {
 
 		StakeSummary memory summary = GetStakeSummary();
 
-		uint256 stakePlusRewards = summary.total_rewards + stake.amount;
+		uint256 convertedRewards = summary.total_rewards / _integer_multiplier; 
+
+		uint256 stakePlusRewards = convertedRewards + stake.amount;
 		uint256 totalMinusTax = deductTax(_unstake_tax_percentage, stakePlusRewards, _integer_multiplier);
 
 		require(totalMinusTax > 0, "Rewards to send must have a value");
